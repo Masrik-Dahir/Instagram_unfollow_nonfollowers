@@ -1,0 +1,21 @@
+{
+  "name": "Instagram Unfollow Nonfollowers",
+  "version": "1.0.0",
+  "description": "Instagram bot with Node.js and Puppeteer to identify and remove non-followers who you follow",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Masrik Dahir",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.51.0",
+    "pouchdb": "^7.0.0",
+    "puppeteer": "^1.5.0",
+    "shuffle-array": "^1.0.1",
+    "aws-sdk": "^2.1030.0",
+    "@aws-sdk/client-secrets-manager": "^3.588.0",
+    "js-yaml": "^4.1.0"
+  }
+}
