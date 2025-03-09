@@ -13,7 +13,7 @@ popup | .xyi19xy.x1ccrb07.xtf3nb5.x1pc53ja.x1lliihq.x1iyjqo2.xs83m0k.xz65tgg.x1r
  Screenshot   |![Screenshot (5)](https://github.com/user-attachments/assets/e566082e-4fb4-45ad-b781-640c18e46f9e)
 2. rm -rf node_modules
 3. rm package-lock.json
-4. npm cache clean
+4. npm cache clean --force
 5. npm install
 6. npx playwright install
 
