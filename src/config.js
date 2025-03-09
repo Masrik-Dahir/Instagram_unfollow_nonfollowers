@@ -1,7 +1,7 @@
 import fs from 'fs';
 import yaml from 'js-yaml';
 
-const loadConfig = (path = '../config.yml') => {
+const loadConfig = (path = './config.yml') => {
     try {
         const fileContents = fs.readFileSync(path, 'utf8');
         const data = yaml.load(fileContents);

@@ -4,22 +4,13 @@ import { updateDynamoDB } from "./AWS/dynamodb.js";
 import config from "./config.js";
 
 
-async function run() {
-    const browser = await chromium.launch({ headless: false }); // Launches a visible browser
-    const page = await browser.newPage();
-
-    await page.goto('https://www.instagram.com');
-    await page.fill('input[name="username"]', secret_manager.username);
-    await page.fill('input[name="password"]', secret_manager.password);
-    await page.click('text="Log in"');
-    await page.waitForNavigation();
-
-    await page.click('text="Profile"');
+async function getProfileToDelete() {
 
     // Open following list
     await page.click('text=" following"');
     const following = await grabLinks(page);
 
+    // Cross teh popup
     await page.click('svg[aria-label="Close"]');
 
     // Open followers list
@@ -71,4 +62,4 @@ async function grabLinks(page) {
     return [...links];
 }
 
-run();
+export default getProfileToDelete;
