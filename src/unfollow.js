@@ -21,7 +21,7 @@ async function run() {
     const empty = await isTableEmpty();
 
     if (empty) {
-        await getProfileToDelete()
+        await getProfileToDelete(page)
     }
 
     const fetchData = async () => {

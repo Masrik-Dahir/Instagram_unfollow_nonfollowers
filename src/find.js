@@ -4,7 +4,7 @@ import { updateDynamoDB } from "./AWS/dynamodb.js";
 import config from "./config.js";
 
 
-async function getProfileToDelete() {
+async function getProfileToDelete(page) {
 
     // Open following list
     await page.click('text=" following"');
@@ -25,39 +25,42 @@ async function getProfileToDelete() {
 
 async function grabLinks(page) {
     let links = new Set();
-    let lastHeight = 0;
 
     const modalSelector = config.instagram.modal_selector.popup;
     await page.waitForSelector(modalSelector, { state: 'visible' });
 
-    // Updated scrollable selector using the provided class
     const scrollableSelector = config.instagram.modal_selector.scroll;
     await page.waitForSelector(scrollableSelector, { state: 'visible' });
 
-    while (true) {
-        const newHeight = await page.evaluate((sel) => {
-            const scrollable = document.querySelector(sel);
-            if (scrollable) {
-                scrollable.scrollTop = scrollable.scrollHeight;
-                return scrollable.scrollHeight;
-            }
-            return 0;
-        }, scrollableSelector);
+    let lastHeight = 0;
 
-        await page.waitForTimeout(config.instagram.lazy_load_time);  // Wait for any lazy-loaded content
+    // Keep scrolling until no new content loads
+    while (true) {
+        let newHeight = await page.evaluate((sel) => {
+            const scrollable = document.querySelector(sel);
+            if (!scrollable) return 0;
+
+            scrollable.scrollTop = scrollable.scrollHeight;
+            return scrollable.scrollHeight;
+        }, scrollableSelector);
 
         if (newHeight === lastHeight) {
-            break;  // Stops if the scroll height hasn't changed, indicating the end of the content
+            break; // Stop when no new content is loaded
         }
+
         lastHeight = newHeight;
-
-        let currentLinks = await page.evaluate((sel) => {
-            const anchors = Array.from(document.querySelectorAll(`${sel} a`));
-            return anchors.map(a => a.href).filter(href => href && href.trim());
-        }, scrollableSelector);
-
-        currentLinks.forEach(link => links.add(link));
+        await page.waitForTimeout(config.instagram.lazy_load_time); // Wait briefly for lazy-loading
     }
+
+    // Fetch links after ensuring we have reached the bottom
+    let currentLinks = await page.evaluate((sel) => {
+        return Array.from(document.querySelectorAll(`${sel} a`))
+            .map(a => a.href)
+            .filter(href => href && href.trim());
+    }, scrollableSelector);
+
+    // Store unique links
+    currentLinks.forEach(link => links.add(link));
 
     return [...links];
 }
