@@ -6,7 +6,7 @@ import yaml from 'js-yaml';
  * @param {string} path - Path to configuration file (default: "config.yaml")
  * @returns {Object} - Configuration object
  */
-function loadConfig(path = "./config.yaml") {
+function loadConfig(path = './config.yml') {
     try {
         const fileContent = fs.readFileSync(path, 'utf8');
         return yaml.load(fileContent);

@@ -1,5 +1,3 @@
-// secretManager.js
-
 import config from "../config.js";
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 

@@ -3,6 +3,8 @@ import secret_manager from "./AWS/secret_manager.js";
 import { getFirstNItems, deleteItem, isTableEmpty } from "./AWS/dynamodb.js";
 import config from "./config.js";
 import getProfileToDelete from "./find.js";
+import {GetSecretValueCommand, SecretsManagerClient} from "@aws-sdk/client-secrets-manager";
+import getSecret from "./AWS/secret_manager.js";
 
 /**
  * Logs into Instagram and navigates to the profile page.
@@ -10,8 +12,9 @@ import getProfileToDelete from "./find.js";
  */
 async function loginInstagram(page) {
     await page.goto('https://www.instagram.com');
-    await page.fill('input[name="username"]', secret_manager.username);
-    await page.fill('input[name="password"]', secret_manager.password);
+    const secret = await getSecret();
+    await page.fill('input[name="username"]', secret.username);
+    await page.fill('input[name="password"]', secret.password);
     await page.click('text="Log in"');
     await page.waitForNavigation();
     await page.click('text="Profile"');
