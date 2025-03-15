@@ -1,82 +1,89 @@
-import AWS from "aws-sdk";
-import config from "../config.js";
+// dynamoDBHandler.js
 
-AWS.config.update({ region: config.aws.region });
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const tableName = config.dynamodb.table;
+import AWS from 'aws-sdk';
+import config from './config.js';
 
-// Get N rows from the table
-const getFirstNItems = async (limit) => {
+const dynamoDB = new AWS.DynamoDB.DocumentClient({ region: config.aws.region });
+const tableName = config.aws.dynamodb_table;
+
+/**
+ * Retrieves a limited number of items from DynamoDB.
+ * @param {number} limit - Number of items to fetch
+ * @returns {Promise<Array>} - Retrieved items
+ */
+export async function getFirstNItems(limit) {
     const params = {
         TableName: tableName,
-        Limit: limit, // Fetch first 'N' items
+        Limit: limit,
     };
 
     try {
         const data = await dynamoDB.scan(params).promise();
-        return data.Items; // Returns the first 'N' items
+        return data.Items;
     } catch (error) {
-        console.error("Error fetching data from DynamoDB:", error);
+        console.error('Error fetching items:', error);
         throw error;
     }
-};
+}
 
-//Delete an Item
-const deleteItem = async (primaryKeyValue) => {
+/**
+ * Deletes an item from DynamoDB.
+ * @param {string} profileLink - Primary key of item to delete
+ */
+export async function deleteItem(profileLink) {
     const params = {
         TableName: tableName,
-        Key: {
-            profile_link: primaryKeyValue, // Replace 'primaryKey' with your actual primary key name
-        },
+        Key: { profile_link: profileLink },
     };
 
     try {
         await dynamoDB.delete(params).promise();
-        console.log(`Item with primary key '${primaryKeyValue}' deleted successfully.`);
+        console.log(`Deleted profile: ${profileLink}`);
     } catch (error) {
-        console.error("Error deleting item:", error);
-    }
-};
-
-// Table is empty or not
-const isTableEmpty = async () => {
-    const params = {
-        TableName: tableName,
-        Limit: 1, // Only fetch 1 item to minimize cost
-    };
-
-    try {
-        const data = await dynamoDB.scan(params).promise();
-        return data.Items.length === 0; // Returns true if table is empty
-    } catch (error) {
-        console.error("Error checking table:", error);
-        throw error;
-    }
-};
-
-// Adding items to the table
-async function addUserToDynamoDB(username) {
-    const params = {
-        TableName: tableName,
-        Item: {
-            profile_link: username
-        }
-    };
-
-    try {
-        const data = await dynamoDB.put(params).promise();
-        console.log(`Added user: ${username}`);
-    } catch (err) {
-        console.error("Error adding user to DynamoDB:", err);
+        console.error('Error deleting item:', error);
     }
 }
 
-// Loop through the array and add each items to DynamoDB
-async function updateDynamoDB(notFollowingBack) {
-    for (const user of notFollowingBack) {
+/**
+ * Checks if the DynamoDB table is empty.
+ * @returns {Promise<boolean>} - True if empty, false otherwise
+ */
+async function isTableEmpty() {
+    try {
+        const data = await dynamoDB.scan({ TableName: tableName, Limit: 1 }).promise();
+        return data.Items.length === 0;
+    } catch (error) {
+        console.error('Error checking table:', error);
+        throw error;
+    }
+}
+
+/**
+ * Adds a user to DynamoDB.
+ * @param {string} username - Profile link of user
+ */
+async function addUserToDynamoDB(username) {
+    const params = {
+        TableName: tableName,
+        Item: { profile_link: username },
+    };
+
+    try {
+        await dynamoDB.put(params).promise();
+        console.log(`Added profile: ${username}`);
+    } catch (error) {
+        console.error('Error adding user:', error);
+    }
+}
+
+/**
+ * Adds multiple users to DynamoDB.
+ * @param {Array} users - Array of profile links
+ */
+async function updateDynamoDB(users) {
+    for (const user of users) {
         await addUserToDynamoDB(user);
     }
 }
 
-// Export both functions explicitly
-export { addUserToDynamoDB, updateDynamoDB, getFirstNItems, deleteItem, isTableEmpty };
+export { getFirstNItems, deleteItem, isTableEmpty, addUserToDynamoDB, updateDynamoDB };

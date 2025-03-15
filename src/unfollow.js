@@ -4,50 +4,70 @@ import { getFirstNItems, deleteItem, isTableEmpty } from "./AWS/dynamodb.js";
 import config from "./config.js";
 import getProfileToDelete from "./find.js";
 
-async function run() {
-
-    const browser = await chromium.launch({ headless: false }); // Launches a visible browser
-
-    const page = await browser.newPage();
-
+/**
+ * Logs into Instagram and navigates to the profile page.
+ * @param {object} page - Playwright page object
+ */
+async function loginInstagram(page) {
     await page.goto('https://www.instagram.com');
-
     await page.fill('input[name="username"]', secret_manager.username);
     await page.fill('input[name="password"]', secret_manager.password);
     await page.click('text="Log in"');
     await page.waitForNavigation();
     await page.click('text="Profile"');
-
-    const empty = await isTableEmpty();
-
-    if (empty) {
-        await getProfileToDelete(page)
-    }
-
-    const fetchData = async () => {
-        try {
-            return await getFirstNItems(config.instagram.profile_unfollow_count); // Return fetched items
-        } catch (error) {
-            console.error("Error:", error);
-            return []; // Return empty array on error to prevent undefined issues
-        }
-    };
-    const items = await fetchData(); // Wait for data to be fetched
-
-
-    for (let i = 0; i < items.length; i++) {
-        const profile_to_unfollow = items[i]["profile_link"]
-        await page.goto(profile_to_unfollow);
-        try {
-            await page.click('text="Following"', { timeout: 2000 });
-            await page.click('text="Unfollow"');
-
-        } catch (error) {
-            console.error("Error clicking on 'Following':", error);
-        }
-        await deleteItem(items[i]["profile_link"]); // Replace with the actual primary key value
-    }
-
 }
 
-export default run;
+/**
+ * Fetches items to unfollow from DynamoDB.
+ * @returns {Promise<Array>} - Array of items to process
+ */
+async function fetchProfilesToUnfollow() {
+    try {
+        return await getFirstNItems(config.instagram.profile_unfollow_count);
+    } catch (error) {
+        console.error("Error fetching profiles:", error);
+        return [];
+    }
+}
+
+/**
+ * Unfollows a given Instagram profile.
+ * @param {object} page - Playwright page object
+ * @param {string} profileLink - Profile URL to unfollow
+ */
+async function unfollowProfile(page, profileLink) {
+    await page.goto(profileLink);
+    try {
+        await page.click('text="Following"', { timeout: 2000 });
+        await page.click('text="Unfollow"');
+    } catch (error) {
+        console.error(`Error unfollowing ${profileLink}:`, error);
+    }
+    await deleteItem(profileLink);
+}
+
+/**
+ * Main function that runs the Instagram unfollow automation.
+ */
+async function runAutomation() {
+    const browser = await chromium.launch({ headless: false });
+    const page = await browser.newPage();
+
+    await loginInstagram(page);
+
+    const empty = await isTableEmpty();
+    if (empty) {
+        await getProfileToDelete(page);
+    }
+
+    const profiles = await fetchProfilesToUnfollow();
+
+    for (const item of profiles) {
+        await unfollowProfile(page, item.profile_link);
+    }
+
+    await page.close();
+    await browser.close();
+}
+
+export default runAutomation;

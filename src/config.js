@@ -1,16 +1,20 @@
 import fs from 'fs';
 import yaml from 'js-yaml';
 
-const loadConfig = (path = './config.yml') => {
+/**
+ * Loads and returns configuration from a YAML file.
+ * @param {string} path - Path to configuration file (default: "config.yaml")
+ * @returns {Object} - Configuration object
+ */
+function loadConfig(path = "./config.yaml") {
     try {
-        const fileContents = fs.readFileSync(path, 'utf8');
-        const data = yaml.load(fileContents);
-        return data;
-    } catch (err) {
-        console.error('Error loading configuration:', err);
-        throw err;
+        const fileContent = fs.readFileSync(path, 'utf8');
+        return yaml.load(fileContent);
+    } catch (error) {
+        console.error("Error loading configuration:", error);
+        throw error;
     }
-};
+}
 
 const config = loadConfig();
 

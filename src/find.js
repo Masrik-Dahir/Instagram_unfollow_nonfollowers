@@ -1,42 +1,38 @@
-import { chromium } from 'playwright';
-import secret_manager from "./AWS/secret_manager.js";
 import { updateDynamoDB } from "./AWS/dynamodb.js";
 import config from "./config.js";
 
-
-async function getProfileToDelete(page) {
-
-    // Open following list
-    await page.click('text=" following"');
-    const following = await grabLinks(page);
-
-    // Cross teh popup
-    await page.click('svg[aria-label="Close"]');
-
-    // Open followers list
-    await page.click('text=" followers"');
-    const followers = await grabLinks(page);
-
-    const notFollowingBack = following.filter(user => !followers.includes(user));
-    console.log('People not following back:', notFollowingBack);
-
-    await updateDynamoDB(notFollowingBack)
+/**
+ * Opens followers/following modal and retrieves user profile links.
+ * @param {object} page - Playwright page object
+ * @param {string} type - Either "followers" or "following"
+ * @returns {Promise<Array>} - List of profile links
+ */
+async function getUserLinks(page, type) {
+    await page.click(`text=" ${type}"`);
+    const links = await grabLinks(page);
+    await page.click('svg[aria-label="Close"]'); // Close modal
+    return links;
 }
 
+/**
+ * Scrolls modal to bottom and grabs profile links.
+ * @param {object} page - Playwright page object
+ * @returns {Promise<Array>} - List of unique profile links
+ */
 async function grabLinks(page) {
-    let links = new Set();
+    const links = new Set();
 
     const modalSelector = config.instagram.modal_selector.popup;
-    await page.waitForSelector(modalSelector, { state: 'visible' });
-
     const scrollableSelector = config.instagram.modal_selector.scroll;
+
+    await page.waitForSelector(modalSelector, { state: 'visible' });
     await page.waitForSelector(scrollableSelector, { state: 'visible' });
 
     let lastHeight = 0;
 
-    // Keep scrolling until no new content loads
+    // Scroll until no new content is loaded
     while (true) {
-        let newHeight = await page.evaluate((sel) => {
+        const newHeight = await page.evaluate((sel) => {
             const scrollable = document.querySelector(sel);
             if (!scrollable) return 0;
 
@@ -44,25 +40,43 @@ async function grabLinks(page) {
             return scrollable.scrollHeight;
         }, scrollableSelector);
 
-        if (newHeight === lastHeight) {
-            break; // Stop when no new content is loaded
-        }
-
+        if (newHeight === lastHeight) break;
         lastHeight = newHeight;
-        await page.waitForTimeout(config.instagram.lazy_load_time); // Wait briefly for lazy-loading
+
+        await page.waitForTimeout(config.instagram.lazy_load_time);
     }
 
-    // Fetch links after ensuring we have reached the bottom
-    let currentLinks = await page.evaluate((sel) => {
-        return Array.from(document.querySelectorAll(`${sel} a`))
-            .map(a => a.href)
-            .filter(href => href && href.trim());
-    }, scrollableSelector);
+    // Fetch all profile links
+    const currentLinks = await page.$$eval('a', anchors => anchors.map(anchor => anchor.href));
 
-    // Store unique links
     currentLinks.forEach(link => links.add(link));
 
     return [...links];
+}
+
+/**
+ * Fetches the profiles that don't follow back and stores them.
+ * @param {object} page - Playwright page object
+ */
+async function getProfileToDelete(page) {
+    const following = await getUserLinks(page, "following");
+    const followers = await getUserLinks(page, "followers");
+
+    const notFollowingBack = following.filter(user => !followers.includes(user));
+
+    await updateNonFollowers(notFollowingBack);
+}
+
+/**
+ * Updates DynamoDB with profiles to potentially delete.
+ * @param {Array} profiles - List of profile links to store
+ */
+async function updateNonFollowers(profiles) {
+    try {
+        await updateDynamoDB(profiles);
+    } catch (error) {
+        console.error("Error updating DynamoDB:", error);
+    }
 }
 
 export default getProfileToDelete;

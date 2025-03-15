@@ -1,25 +1,28 @@
+// secretManager.js
+
 import config from "../config.js";
-import {GetSecretValueCommand, SecretsManagerClient} from "@aws-sdk/client-secrets-manager";
+import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 
+const client = new SecretsManagerClient({ region: config.aws.region });
 
-const secret_name = config.secret.credential;
+/**
+ * Retrieves and parses secrets from AWS Secrets Manager.
+ * @param {string} secretName - Name of the secret to fetch
+ * @returns {Promise<object>} - Parsed secret object
+ */
+async function getSecret(secretName = config.secret.credential) {
+    try {
+        const response = await client.send(
+            new GetSecretValueCommand({
+                SecretId: secretName,
+            })
+        );
 
-const client = new SecretsManagerClient({
-    region: config.aws.region,
-});
-
-let response;
-
-try {
-    response = await client.send(
-        new GetSecretValueCommand({
-            SecretId: secret_name,
-        })
-    );
-} catch (error) {
-    throw error;
+        return JSON.parse(response.SecretString);
+    } catch (error) {
+        console.error(`Error retrieving secret \"${secretName}\":`, error);
+        throw error;
+    }
 }
 
-const secret = JSON.parse(response.SecretString);
-
-export default secret;
+export default getSecret;
