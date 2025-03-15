@@ -1,9 +1,7 @@
 import { chromium } from 'playwright';
-import secret_manager from "./AWS/secret_manager.js";
 import { getFirstNItems, deleteItem, isTableEmpty } from "./AWS/dynamodb.js";
 import config from "./config.js";
 import getProfileToDelete from "./find.js";
-import {GetSecretValueCommand, SecretsManagerClient} from "@aws-sdk/client-secrets-manager";
 import getSecret from "./AWS/secret_manager.js";
 
 /**
