@@ -51,7 +51,7 @@ async function unfollowProfile(page, profileLink) {
  * Main function that runs the Instagram unfollow automation.
  */
 async function runAutomation() {
-    const browser = await chromium.launch({ headless: false });
+    const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
     await loginInstagram(page);

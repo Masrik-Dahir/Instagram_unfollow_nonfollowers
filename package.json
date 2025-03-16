@@ -10,12 +10,13 @@
   "author": "Masrik Dahir",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.588.0",
+    "@playwright/test": "^1.51.0",
+    "aws-sdk": "^2.1030.0",
+    "js-yaml": "^4.1.0",
     "playwright": "^1.51.0",
     "pouchdb": "^7.0.0",
     "puppeteer": "^1.5.0",
-    "shuffle-array": "^1.0.1",
-    "aws-sdk": "^2.1030.0",
-    "@aws-sdk/client-secrets-manager": "^3.588.0",
-    "js-yaml": "^4.1.0"
+    "shuffle-array": "^1.0.1"
   }
 }
