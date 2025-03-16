@@ -6,10 +6,13 @@ secret:
 
 dynamodb:
   table: "instagram_unfollowers"
+  updateTable: "last_updated"
+  updateTableKey: "instagram_unfollow_nonfollowers"
 
 app:
   environment: "production"
   logging_level: "info"
+  grace_period_days: 7
 
 instagram:
   lazy_load_time: 5000

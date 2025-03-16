@@ -1,5 +1,5 @@
-import { chromium } from 'playwright';
-import { getFirstNItems, deleteItem, isTableEmpty } from "./AWS/dynamodb.js";
+import {chromium} from 'playwright';
+import {getFirstNItems, deleteItem, isTableEmpty, getDiffInDays, updateCurrentDate, addDateIfNotExists} from "./AWS/dynamodb.js";
 import config from "./config.js";
 import getProfileToDelete from "./find.js";
 import getSecret from "./AWS/secret_manager.js";
@@ -39,7 +39,7 @@ async function fetchProfilesToUnfollow() {
 async function unfollowProfile(page, profileLink) {
     await page.goto(profileLink);
     try {
-        await page.click('text="Following"', { timeout: 2000 });
+        await page.click('text="Following"', {timeout: 2000});
         await page.click('text="Unfollow"');
     } catch (error) {
         console.error(`Error unfollowing ${profileLink}:`, error);
@@ -51,13 +51,16 @@ async function unfollowProfile(page, profileLink) {
  * Main function that runs the Instagram unfollow automation.
  */
 async function runAutomation() {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({headless: true});
     const page = await browser.newPage();
+    await addDateIfNotExists()
 
     await loginInstagram(page);
 
     const empty = await isTableEmpty();
-    if (empty) {
+    const diff = await getDiffInDays();
+
+    if (empty && diff >= config.app.grace_period_days) {
         await getProfileToDelete(page);
     }
 
@@ -66,7 +69,7 @@ async function runAutomation() {
     for (const item of profiles) {
         await unfollowProfile(page, item.profile_link);
     }
-
+    await updateCurrentDate()
     await page.close();
     await browser.close();
 }
