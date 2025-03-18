@@ -14,6 +14,7 @@ async function loginInstagram(page) {
     await page.fill('input[name="username"]', secret.username);
     await page.fill('input[name="password"]', secret.password);
     await page.click('text="Log in"');
+    await page.waitForTimeout(10000);
     await page.waitForNavigation();
     await page.click('text="Profile"');
 }
