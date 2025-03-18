@@ -62,6 +62,7 @@ async function runAutomation() {
 
     if (empty && diff >= config.app.grace_period_days) {
         await getProfileToDelete(page);
+        await updateCurrentDate()
     }
 
     const profiles = await fetchProfilesToUnfollow();
@@ -69,7 +70,6 @@ async function runAutomation() {
     for (const item of profiles) {
         await unfollowProfile(page, item.profile_link);
     }
-    await updateCurrentDate()
     await page.close();
     await browser.close();
 }
