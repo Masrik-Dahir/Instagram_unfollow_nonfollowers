@@ -1,4 +1,4 @@
-import { updateDynamoDB } from "./AWS/dynamodb.js";
+import {log, updateDynamoDB} from "./AWS/dynamodb.js";
 import config from "./config.js";
 
 /**
@@ -59,7 +59,9 @@ async function grabLinks(page) {
  * @param {object} page - Playwright page object
  */
 async function getProfileToDelete(page) {
+    await log("Looking for Following: Start")
     const following = await getUserLinks(page, "following");
+    await log("Looking for Follower: Start")
     const followers = await getUserLinks(page, "followers");
 
     const notFollowingBack = following.filter(user => !followers.includes(user));

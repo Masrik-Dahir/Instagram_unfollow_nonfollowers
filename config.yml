@@ -8,8 +8,10 @@ dynamodb:
   table: "instagram_unfollowers"
   updateTable: "last_updated"
   updateTableKey: "instagram_unfollow_nonfollowers"
+  logTable: "log"
 
 app:
+  name: "Instagram_unfollow_nonfollowers"
   environment: "production"
   logging_level: "info"
   grace_period_days: 7

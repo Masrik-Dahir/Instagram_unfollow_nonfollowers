@@ -1,5 +1,13 @@
 import {chromium} from 'playwright';
-import {getFirstNItems, deleteItem, isTableEmpty, getDiffInDays, updateCurrentDate, addDateIfNotExists} from "./AWS/dynamodb.js";
+import {
+    getFirstNItems,
+    deleteItem,
+    isTableEmpty,
+    getDiffInDays,
+    updateCurrentDate,
+    addDateIfNotExists,
+    log
+} from "./AWS/dynamodb.js";
 import config from "./config.js";
 import getProfileToDelete from "./find.js";
 import getSecret from "./AWS/secret_manager.js";
@@ -11,12 +19,15 @@ import getSecret from "./AWS/secret_manager.js";
 async function loginInstagram(page) {
     await page.goto('https://www.instagram.com');
     const secret = await getSecret();
+    await log("Connecting to Instagram: Start")
     await page.fill('input[name="username"]', secret.username);
     await page.fill('input[name="password"]', secret.password);
     await page.click('text="Log in"');
+    await log("Connecting to Instagram: End")
     await page.waitForTimeout(10000);
     await page.waitForNavigation();
     await page.click('text="Profile"');
+    await log("Connecting to Instagram: End")
 }
 
 /**
@@ -66,11 +77,14 @@ async function runAutomation() {
         await updateCurrentDate()
     }
 
+    await log("Looking for Account to Unfollow: Start")
     const profiles = await fetchProfilesToUnfollow();
 
     for (const item of profiles) {
         await unfollowProfile(page, item.profile_link);
     }
+    await log("Account Unfollow: End")
+
     await page.close();
     await browser.close();
 }

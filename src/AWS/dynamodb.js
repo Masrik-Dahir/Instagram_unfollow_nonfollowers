@@ -5,6 +5,8 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient({ region: config.aws.region });
 const tableName = config.dynamodb.table;
 const updateTableName = config.dynamodb.updateTable;
 const updateTableKeyName = config.dynamodb.updateTableKey;
+const logTableName = config.dynamodb.logTable;
+const appName = config.app.name;
 
 /**
  * Retrieves a limited number of items from DynamoDB.
@@ -100,6 +102,37 @@ async function getDiffInDays() {
     } catch (error) {
         console.error('Error querying table:', error);
         throw error;
+    }
+}
+
+
+async function log(message, level="info") {
+    const params = {
+        TableName: logTableName,
+        Item: {
+            "application": appName,
+            "datetime": new Date().toISOString(),
+            "level": level,
+            "message": message
+        },
+        ConditionExpression: 'attribute_not_exists(#key)',
+        ExpressionAttributeNames: {
+            '#key': 'key'
+        }
+    };
+
+    try {
+        await dynamoDB.put(params).promise();
+        console.log('Successfully inserted new log.');
+        return true;
+    } catch (error) {
+        if (error.code === 'ConditionalCheckFailedException') {
+            console.log('Key already exists. No action taken.');
+            return false;
+        } else {
+            console.error('Error inserting new log:', error);
+            throw error;
+        }
     }
 }
 
@@ -201,5 +234,6 @@ export {
     updateDynamoDB,
     getDiffInDays,
     updateCurrentDate,
-    addDateIfNotExists
+    addDateIfNotExists,
+    log
 };
