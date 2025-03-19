@@ -17,17 +17,20 @@ import getSecret from "./AWS/secret_manager.js";
  * @param {object} page - Playwright page object
  */
 async function loginInstagram(page) {
-    await page.goto('https://www.instagram.com');
-    const secret = await getSecret();
-    await log("Connecting to Instagram: Start")
-    await page.fill('input[name="username"]', secret.username);
-    await page.fill('input[name="password"]', secret.password);
-    await page.click('text="Log in"');
-    await log("Connecting to Instagram: End")
-    await page.waitForTimeout(10000);
-    await page.waitForNavigation();
-    await page.click('text="Profile"');
-    await log("Connecting to Instagram: End")
+    try {
+        await page.goto('https://www.instagram.com');
+        const secret = await getSecret();
+        await page.fill('input[name="username"]', secret.username);
+        await page.fill('input[name="password"]', secret.password);
+        await page.click('text="Log in"');
+        await page.waitForTimeout(10000);
+        await page.waitForNavigation();
+        await page.click('text="Profile"');
+    } catch (error) {
+        console.error("Error logging into Instagram:", error);
+        log(`Error logging into Instagram: ${error}`, "error");
+        return [];
+    }
 }
 
 /**
@@ -39,6 +42,7 @@ async function fetchProfilesToUnfollow() {
         return await getFirstNItems(config.instagram.profile_unfollow_count);
     } catch (error) {
         console.error("Error fetching profiles:", error);
+        log(`Error fetching profiles: ${error}`, "error");
         return [];
     }
 }
@@ -55,6 +59,7 @@ async function unfollowProfile(page, profileLink) {
         await page.click('text="Unfollow"');
     } catch (error) {
         console.error(`Error unfollowing ${profileLink}:`, error);
+        log(`Error unfollowing ${profileLink}: ${error}`, "error");
     }
     await deleteItem(profileLink);
 }
@@ -77,13 +82,11 @@ async function runAutomation() {
         await updateCurrentDate()
     }
 
-    await log("Looking for Account to Unfollow: Start")
     const profiles = await fetchProfilesToUnfollow();
 
     for (const item of profiles) {
         await unfollowProfile(page, item.profile_link);
     }
-    await log("Account Unfollow: End")
 
     await page.close();
     await browser.close();

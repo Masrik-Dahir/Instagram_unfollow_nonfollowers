@@ -8,10 +8,15 @@ import config from "./config.js";
  * @returns {Promise<Array>} - List of profile links
  */
 async function getUserLinks(page, type) {
-    await page.click(`text=" ${type}"`);
-    const links = await grabLinks(page);
-    await page.click('svg[aria-label="Close"]'); // Close modal
-    return links;
+    try {
+        await page.click(`text=" ${type}"`);
+        const links = await grabLinks(page);
+        await page.click('svg[aria-label="Close"]'); // Close modal
+        return links;
+    } catch (error) {
+        log(`Error getting user links for ${type}: ${error}`, "error");
+        throw error;
+    }
 }
 
 /**
@@ -78,6 +83,7 @@ async function updateNonFollowers(profiles) {
         await updateDynamoDB(profiles);
     } catch (error) {
         console.error("Error updating DynamoDB:", error);
+        log(`Error updating DynamoDB: ${error}`, "error");
     }
 }
 

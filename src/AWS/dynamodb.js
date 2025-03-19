@@ -24,6 +24,7 @@ async function getFirstNItems(limit) {
         return data.Items;
     } catch (error) {
         console.error('Error fetching items:', error);
+        log(`Error fetching items: ${error}`, "error");
         throw error;
     }
 }
@@ -45,6 +46,7 @@ async function deleteItem(profileLink) {
         console.log(`Deleted profile: ${profileLink}`);
     } catch (error) {
         console.error('Error deleting item:', error);
+        log(`Error deleting item: ${error}`, "error");
         throw error;
     }
 }
@@ -64,6 +66,7 @@ async function isTableEmpty() {
         return data.Items.length === 0;
     } catch (error) {
         console.error('Error checking if table is empty:', error);
+        log(`Error checking if table is empty: ${error}`, "error");
         throw error;
     }
 }
@@ -101,11 +104,18 @@ async function getDiffInDays() {
         }
     } catch (error) {
         console.error('Error querying table:', error);
+        log(`Error querying table: ${error}`, "error");
         throw error;
     }
 }
 
-
+/**
+ * Logs a message to the DynamoDB log table.
+ * @param {string} message - The message to log
+ * @param {string} [level="info"] - The log level (e.g., "info", "error")
+ * @returns {Promise<boolean>} - True if the log was successfully inserted, false if the key already exists
+ * @throws Will throw an error if the DynamoDB put operation fails for reasons other than the key already existing
+ */
 async function log(message, level="info") {
     const params = {
         TableName: logTableName,
@@ -128,9 +138,11 @@ async function log(message, level="info") {
     } catch (error) {
         if (error.code === 'ConditionalCheckFailedException') {
             console.log('Key already exists. No action taken.');
+            log('Key already exists. No action taken.');
             return false;
         } else {
             console.error('Error inserting new log:', error);
+            log(`Error inserting new log: ${error}`, "error");
             throw error;
         }
     }
@@ -163,9 +175,11 @@ async function addDateIfNotExists() {
     } catch (error) {
         if (error.code === 'ConditionalCheckFailedException') {
             console.log('Key already exists. No action taken.');
+            log('Key already exists. No action taken.');
             return false;
         } else {
             console.error('Error inserting new date entry:', error);
+            log(`Error inserting new date entry: ${error}`, "error");
             throw error;
         }
     }
@@ -191,6 +205,7 @@ async function updateCurrentDate() {
         console.log('Successfully updated date for key: instagram_unfollow_nonfollowers');
     } catch (error) {
         console.error('Error updating date in table:', error);
+        log(`Error updating date in table: ${error}`, "error");
         throw error;
     }
 }
@@ -212,6 +227,7 @@ async function addUserToDynamoDB(username) {
         console.log(`Added user: ${username}`);
     } catch (err) {
         console.error("Error adding user to DynamoDB:", err);
+        log(`Error adding user to DynamoDB: ${err}`, "error");
     }
 }
 
